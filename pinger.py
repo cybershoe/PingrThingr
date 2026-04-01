@@ -12,9 +12,9 @@ from asyncio import (
     sleep as asyncio_sleep,
     wait_for,
     CancelledError,
-    TimeoutError
+    TimeoutError,
 )
-
+from typing import List
 from threading import Thread
 from socket import inet_aton
 from time import monotonic
@@ -23,24 +23,38 @@ from icmplib import async_multiping
 
 class Pinger:
     """A network pinger class that periodically monitors connectivity to target IP addresses.
-    
+
     This class runs a background async task that performs periodic connectivity checks
     to a list of target IP addresses. The pinger runs in its own event loop on a
     separate daemon thread to avoid blocking the main application.
-    
+
     Attributes:
-        frequency (float): Time in seconds between ping cycles.
-        targets (list[str]): List of IP addresses to monitor.
+        frequency (int): Time in seconds between ping cycles.
+        targets (List[str]): List of IP addresses to monitor.
+        cb (callable): Optional callback function called with ping results.
     """
 
-    def __init__(self, targets=[], timeout: int = 2, count: int = 5, interval: float = 0.5, frequency: int = 2, start_running: bool = False):
+    def __init__(
+        self,
+        targets: List[str] = [],
+        timeout: int = 2,
+        count: int = 5,
+        interval: float = 0.5,
+        frequency: int = 2,
+        start_running: bool = False,
+        cb: callable = None,
+    ):
         """Initialize the Pinger instance.
-        
+
         Args:
-            targets (list[str], optional): List of IP addresses to ping. Defaults to [].
-            frequency (float, optional): Minimum time in seconds between ping cycles. Defaults to 2.0.
-            start_running (bool, optional): Whether to start pinging immediately. Defaults to True.
-        
+            targets (List[str], optional): List of IP addresses to ping. Defaults to [].
+            timeout (int, optional): Ping timeout in seconds. Defaults to 2.
+            count (int, optional): Number of ping packets to send per target. Defaults to 5.
+            interval (float, optional): Time interval between individual ping packets in seconds. Defaults to 0.5.
+            frequency (int, optional): Time in seconds between ping cycles. Defaults to 2.
+            start_running (bool, optional): Whether to start pinging immediately. Defaults to False.
+            cb (callable, optional): Callback function to be called with ping results. Defaults to None.
+            
         Raises:
             ValueError: If any target IP address is invalid.
         """
@@ -50,7 +64,8 @@ class Pinger:
         self._frequency = frequency
         self._timeout = timeout
         self._count = count
-        self._interval = interval   
+        self._interval = interval
+        self.cb = cb
 
         self.loop = new_event_loop()
         Thread(
@@ -63,7 +78,7 @@ class Pinger:
 
     def __del__(self):
         """Clean up resources when the Pinger instance is destroyed.
-        
+
         Attempts to stop the background event loop gracefully.
         """
         try:
@@ -73,10 +88,10 @@ class Pinger:
 
     def _start_background_loop(self, loop: AbstractEventLoop) -> None:
         """Start the background event loop for async operations.
-        
+
         This method runs in a separate daemon thread to handle async ping operations
         without blocking the main application thread.
-        
+
         Args:
             loop (AbstractEventLoop): The asyncio event loop to run.
         """
@@ -84,23 +99,23 @@ class Pinger:
         loop.run_forever()
 
     @property
-    def targets(self) -> list[str]:
+    def targets(self) -> List[str]:
         """Get the list of target IP addresses.
-        
+
         Returns:
-            list[str]: List of IP addresses being monitored.
+            List[str]: List of IP addresses being monitored.
         """
         return self._targets
 
     @targets.setter
-    def targets(self, targets: list[str]) -> None:
+    def targets(self, targets: List[str]) -> None:
         """Set the list of target IP addresses to monitor.
-        
+
         Validates that all provided addresses are valid IPv4 addresses.
-        
+
         Args:
-            targets (list[str]): List of IP addresses to monitor.
-            
+            targets (List[str]): List of IP addresses to monitor.
+
         Raises:
             ValueError: If any target IP address is invalid.
         """
@@ -112,21 +127,13 @@ class Pinger:
             else:
                 self._targets = targets
 
-    @targets.getter
-    def targets(self) -> list[str]:
-        """Get the list of target IP addresses.
-        
-        Returns:
-            list[str]: List of IP addresses being monitored.
-        """
-        return self._targets
-
     async def _run_pings(self) -> None:
         """Background async task that performs periodic ping operations.
-        
+
         This coroutine runs continuously, performing ping operations at the
-        specified frequency interval. It can be cancelled by calling run(False).
-        
+        specified frequency interval. Executes the callback function with
+        results if one is provided. It can be cancelled by calling run(False).
+
         Raises:
             asyncio.CancelledError: When the task is cancelled.
         """
@@ -136,12 +143,26 @@ class Pinger:
                 if len(self.targets) > 0:
                     try:
                         results = await wait_for(
-                            async_multiping(self._targets, count=self._count, timeout=self._timeout, interval=self._interval, privileged=False, concurrent_tasks=20),
-                            timeout=30.0
+                            async_multiping(
+                                self._targets,
+                                count=self._count,
+                                timeout=self._timeout,
+                                interval=self._interval,
+                                privileged=False,
+                                concurrent_tasks=20,
+                            ),
+                            timeout=30.0,
                         )
-                        for result in results:
-                            print(f"Pinged {result.address}: avg {result.avg_rtt} ms, max {result.max_rtt} ms (loss {result.packet_loss*100}%)")
-         
+                        if self.cb:
+                            try:
+                                print(f"{[host.avg_rtt for host in results if host.avg_rtt is not None]}")
+                                avg_latency = self.remove_outliers_and_avg([host.avg_rtt for host in results if host.avg_rtt is not None])
+                                print(avg_latency)
+                                avg_loss = self.remove_outliers_and_avg([host.packet_loss for host in results if host.packet_loss is not None])
+                                self.cb(avg_latency, avg_loss)
+                            except Exception as e:
+                                print(f"Error in callback function: {e}")
+
                     except TimeoutError:
                         print("Ping operation timed out after 30 seconds")
                     except Exception as e:
@@ -152,27 +173,9 @@ class Pinger:
         except CancelledError:
             print("ping task was cancelled")
 
-    async def _background_task(self) -> None:
-        """Background async task that performs periodic ping operations.
-        
-        This coroutine runs continuously, performing ping operations at the
-        specified frequency interval. It can be cancelled by calling run(False).
-        
-        Raises:
-            asyncio.CancelledError: When the task is cancelled.
-        """
-        try:
-            while True:
-                start_time = monotonic()
-                print("background task is running")
-                await asyncio_sleep(0.5)  # Simulate work being done
-                await asyncio_sleep(self.frequency - ((monotonic() - start_time)))
-        except CancelledError:
-            print("background task was cancelled")
-
     def run(self, running: bool) -> None:
         """Start or stop the ping monitoring.
-        
+
         Args:
             running (bool): True to start pinging, False to stop pinging.
         """
@@ -185,3 +188,32 @@ class Pinger:
             if self.pinger_coroutine is not None:
                 self.pinger_coroutine.cancel()
                 self.pinger_coroutine = None
+
+    def remove_outliers_and_avg(self, values: List[float]) -> float | None:
+        """Remove outlier values and return the mean of remaining values.
+
+        This method filters out values that are significantly higher than the mean.
+        If no values are provided, it returns None. If only one value is provided,
+        it returns that value. Otherwise, it calculates the mean and removes any
+        value that is more than 1.5 times the mean, then returns the new mean.
+
+        Args:
+            values (List[float]): List of float values to filter for outliers.
+
+        Returns:
+            float | None: Mean of filtered values, or None if no values provided.
+        """
+        print(f"Removing outliers from values: {values}")
+        if len(values) == 0:
+            print("No values provided, returning None")
+            return None
+        elif len(values) == 1:
+            return values[0]
+        else:
+            mean_value = sum(values) / len(values)
+            max_value = max(values)
+            if max_value > mean_value * 1.5:
+                values.pop(values.index(max_value))  # Remove max value as outlier
+                return sum(values) / len(values)
+            else:
+                return mean_value
