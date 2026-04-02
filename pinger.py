@@ -143,6 +143,7 @@ class Pinger:
                 start_time = monotonic()
                 if len(self.targets) > 0:
                     try:
+                        print(f"Pinging targets: {self._targets}")
                         results = await wait_for(
                             async_multiping(
                                 self._targets,

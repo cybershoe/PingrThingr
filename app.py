@@ -7,7 +7,7 @@ from rumps import App, clicked, alert, MenuItem, timer
 from pinger import Pinger
 from json import dump as json_dump, load as json_load
 from icon import status_text_icon, symbol_icon
-
+from preferences import getPreferences
 
 class PingBarApp(App):
     """Main application class for PingBar menu bar app.
@@ -145,7 +145,8 @@ class PingBarApp(App):
         Args:
             _: Unused menu item parameter.
         """
-        alert("jk! no preferences available!")
+        new_targets = getPreferences(self.get_setting("targets", []))
+        self.set_setting("targets", new_targets)
 
     @clicked("Pause")
     def onoff(self, sender):
