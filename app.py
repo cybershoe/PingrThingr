@@ -3,10 +3,10 @@
 This module contains the main application class for PingBar, a macOS menu bar
 application that monitors network connectivity by pinging specified targets.
 """
-from rumps import App, clicked, alert, notification, MenuItem, timer
+from rumps import App, clicked, alert, MenuItem, timer
 from pinger import Pinger
 from json import dump as json_dump, load as json_load
-from icon import paused_icon, status_text
+from icon import status_text_icon, symbol_icon
 
 
 class PingBarApp(App):
@@ -33,11 +33,13 @@ class PingBarApp(App):
         self._load_settings()
         self.latency = None
         self.loss = None
-        self.icon = "pingbar.png"
         self.title = None
-
+        self._icon_nsimage = symbol_icon("pause.circle" if self.get_setting("paused", False) else "waveform.path.ecg", "PingBar")
         self.statistics_menu = MenuItem("waiting...")
-        self.menu = [self.statistics_menu, "Pause", "Preferences"]
+        self.pause_menu = MenuItem("Pause")
+        self.pause_menu.state = self.get_setting("paused", False)
+        self.menu = [self.statistics_menu, self.pause_menu, "Preferences"]
+        self._changed = False
 
 
     def _load_settings(self):
@@ -81,6 +83,10 @@ class PingBarApp(App):
             self.pinger.targets = value
         if key == "paused":
             self.pinger.run(not value)
+            self.pause_menu.state = value
+            self.latency = None
+            self.loss = None
+            self._changed = True
 
         self._save_settings()
 
@@ -95,6 +101,7 @@ class PingBarApp(App):
             The setting value or the default value if key doesn't exist.
         """
         return self.settings.get(key, default)
+    
 
     def update_statistics(self, latency: float = None, loss: float = None):
         """Update the statistics menu item text.
@@ -107,22 +114,26 @@ class PingBarApp(App):
             self.latency = latency
         if loss is not None:
             self.loss = loss
+
+        self._changed = True
+
+
         print(f"Updating statistics: loss={self.loss}, latency={self.latency}")
     
     @timer(1)
     def refresh_menu(self, _):
         """Refresh the statistics menu item text every second."""
-        if self.settings.get("paused"):
-            self.statistics_menu.title = "Paused"
-            self._icon_nsimage = paused_icon()
-        else:
-            loss_str = f"{(self.loss*100):.2f}%" if self.loss is not None else "N/A"
-            latency_str = f"{(self.latency):.2f} ms" if self.latency is not None else "N/A"
-            self.statistics_menu.title = f"Loss: {loss_str}, Latency: {latency_str}"
-            if self.loss is not None and self.latency is not None:
-                self._icon_nsimage = status_text(self.latency, self.loss)
-        self._nsapp.setStatusBarIcon()
-
+        if self._changed:
+            self._changed = False
+            if self.settings.get("paused"):
+                self.statistics_menu.title = "Paused"
+                self._icon_nsimage = symbol_icon("pause.circle", "Paused")
+            else:
+                loss_str = f"{(self.loss*100):.2f}%" if self.loss is not None else "N/A"
+                latency_str = f"{(self.latency):.2f} ms" if self.latency is not None else "N/A"
+                self.statistics_menu.title = f"Loss: {loss_str}, Latency: {latency_str}"
+                self._icon_nsimage = status_text_icon(self.latency, self.loss)
+            self._nsapp.setStatusBarIcon()
 
     @clicked("Preferences")
     def prefs(self, _):
@@ -147,4 +158,5 @@ class PingBarApp(App):
         """
         self.set_setting("paused", not self.get_setting("paused", False))
         sender.state = self.get_setting("paused", False)
+        self.refresh_menu(self)
 

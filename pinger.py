@@ -38,9 +38,9 @@ class Pinger:
         self,
         targets: List[str] = [],
         timeout: int = 2,
-        count: int = 5,
+        count: int = 10,
         interval: float = 0.5,
-        frequency: int = 2,
+        frequency: int = 10,
         start_running: bool = False,
         cb: callable = None,
     ):
