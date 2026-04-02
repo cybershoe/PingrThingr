@@ -77,5 +77,6 @@ LOGLEVEL=DEBUG python main.py
 ```
 
 ---
+Copyright (c) 2026 Adam Schumacher
 
 For questions, issues, or feature requests, please use the GitHub issue tracker.
