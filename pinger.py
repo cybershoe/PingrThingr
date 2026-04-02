@@ -76,6 +76,7 @@ class Pinger:
         if start_running:
             self.run(True)  # Start in the running state
 
+
     def __del__(self):
         """Clean up resources when the Pinger instance is destroyed.
 
@@ -188,6 +189,9 @@ class Pinger:
             if self.pinger_coroutine is not None:
                 self.pinger_coroutine.cancel()
                 self.pinger_coroutine = None
+            if self.cb:
+                self.cb(None, None)
+
 
     def remove_outliers_and_avg(self, values: List[float]) -> float | None:
         """Remove outlier values and return the mean of remaining values.

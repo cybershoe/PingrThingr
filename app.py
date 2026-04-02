@@ -3,10 +3,10 @@
 This module contains the main application class for PingBar, a macOS menu bar
 application that monitors network connectivity by pinging specified targets.
 """
-import faulthandler
 from rumps import App, clicked, alert, notification, MenuItem, timer
 from pinger import Pinger
 from json import dump as json_dump, load as json_load
+from icon import paused_icon, status_text
 
 
 class PingBarApp(App):
@@ -31,14 +31,13 @@ class PingBarApp(App):
         super(PingBarApp, self).__init__(*args, **kwargs)
         self.settings = {}
         self._load_settings()
-        self.latency = 0
-        self.loss = 0
+        self.latency = None
+        self.loss = None
         self.icon = "pingbar.png"
         self.title = None
 
         self.statistics_menu = MenuItem("waiting...")
         self.menu = [self.statistics_menu, "Pause", "Preferences"]
-        faulthandler.enable()
 
 
     def _load_settings(self):
@@ -109,13 +108,21 @@ class PingBarApp(App):
         if loss is not None:
             self.loss = loss
         print(f"Updating statistics: loss={self.loss}, latency={self.latency}")
-
+    
     @timer(1)
     def refresh_menu(self, _):
         """Refresh the statistics menu item text every second."""
-        loss_str = f"{(self.loss*100):.2f}%" if self.loss is not None else "N/A"
-        latency_str = f"{(self.latency):.2f} ms" if self.latency is not None else "N/A"
-        self.statistics_menu.title = f"Loss: {loss_str}, Latency: {latency_str}"
+        if self.settings.get("paused"):
+            self.statistics_menu.title = "Paused"
+            self._icon_nsimage = paused_icon()
+        else:
+            loss_str = f"{(self.loss*100):.2f}%" if self.loss is not None else "N/A"
+            latency_str = f"{(self.latency):.2f} ms" if self.latency is not None else "N/A"
+            self.statistics_menu.title = f"Loss: {loss_str}, Latency: {latency_str}"
+            if self.loss is not None and self.latency is not None:
+                self._icon_nsimage = status_text(self.latency, self.loss)
+        self._nsapp.setStatusBarIcon()
+
 
     @clicked("Preferences")
     def prefs(self, _):
