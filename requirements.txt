@@ -1,4 +1,5 @@
 altgraph==0.17.5
+icmplib==3.0.4
 macholib==1.16.4
 modulegraph==0.19.7
 packaging==26.0
