@@ -3,7 +3,7 @@
 This module contains the main application class for PingBar, a macOS menu bar
 application that monitors network connectivity by pinging specified targets.
 """
-from rumps import App, clicked, alert, MenuItem, timer
+from rumps import App, clicked, MenuItem, timer
 from pinger import Pinger
 from json import dump as json_dump, load as json_load
 from icon import status_text_icon, symbol_icon
