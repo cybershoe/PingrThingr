@@ -208,7 +208,7 @@ class PingBarApp(App):
                 logger.debug(f"In refresh_status(): Last state: {self._last_state}, new state: {new_state}")
                 self._last_state = new_state
                 
-                if icon:
+                if icon is not None:
                     logger.debug(f"In refresh_status(): Updating icon for new state: {new_state}")
                     self._icon_nsimage = icon
                     self._nsapp.setStatusBarIcon()
