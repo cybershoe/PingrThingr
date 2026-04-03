@@ -217,10 +217,10 @@ class PingBarApp(App):
         """
         new_targets = update_ping_targets(self.get_setting("targets", []))
         if new_targets is not None:
-            logger.debug(f"Updating targets from get_preferences: {new_targets}")
+            logger.debug(f"Updating targets from update_ping_targets(): {new_targets}")
             self.set_setting("targets", new_targets)
         else:
-            logger.debug(f"get_preferences returned None, no changes to targets")
+            logger.debug(f"update_ping_targets() returned None, no changes to targets")
 
     @clicked("Pause")
     def onoff(self, sender):

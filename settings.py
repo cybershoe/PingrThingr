@@ -120,7 +120,7 @@ class SelectableMenu(MenuItem):
         self.title = self._base_title
 
 
-def update_ping_targets(targets: List[str]) -> List[str]:
+def update_ping_targets(targets: List[str]) -> List[str] | None:
     """Display preferences dialog for configuring ping targets.
 
     Shows a modal dialog window allowing the user to enter or modify
