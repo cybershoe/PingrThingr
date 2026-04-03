@@ -14,6 +14,7 @@ from AppKit import (
     NSFont,
     NSForegroundColorAttributeName,
     NSFontAttributeName,
+    NSImageSymbolConfiguration,
 )
 from Foundation import NSUserDefaults
 
@@ -201,20 +202,21 @@ def symbol_icon(
     Returns:
         NSImage: A 20x20 pixel icon of the specified SF Symbol, optionally colored.
     """
-    # Create SF Symbol image
+    # Create SF Symbol image with configuration
     symbol_image = NSImage.imageWithSystemSymbolName_accessibilityDescription_(
         symbol_name, accessibility_description
     )
+    
+    if color is not None:
+        # Create a hierarchical color configuration and apply it to the symbol
+        config = NSImageSymbolConfiguration.configurationWithHierarchicalColor_(color)
+        symbol_image = symbol_image.imageWithSymbolConfiguration_(config)
 
     # Create a new 20x20 image
     size = NSSize(20, 20)
     image = NSImage.alloc().initWithSize_(size)
 
     image.lockFocus()
-
-    if color is not None:
-        # Set the desired color for the symbol
-        color.set()
 
     # Draw the symbol image scaled to fit the 20x20 size
     if small:
