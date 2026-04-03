@@ -174,9 +174,18 @@ class Pinger:
                             ),
                             timeout=30.0,
                         )
-                        logger.debug(
-                            f"In _run_pings(): Ping results: {[{"target": r.address, "avg_rtt": r.avg_rtt, "packet_loss": r.packet_loss} for r in results]}"
-                        )
+                        if logger.isEnabledFor(logging.DEBUG):
+                            ping_results = [
+                                {
+                                    "target": r.address,
+                                    "avg_rtt": r.avg_rtt,
+                                    "packet_loss": r.packet_loss,
+                                }
+                                for r in results
+                            ]
+                            logger.debug(
+                                "In _run_pings(): Ping results: %s", ping_results
+                            )
 
                         if self.cb:
                             try:
