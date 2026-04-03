@@ -197,20 +197,28 @@ class PingBarApp(App):
 
                 match display:
                     case "Dot":
-                        icon, new_state = status_dot_icon(self.latency, self.loss, self._last_state)
-                        
+                        icon, new_state = status_dot_icon(
+                            self.latency, self.loss, self._last_state
+                        )
+
                     case "Text":
-                        icon, new_state = status_text_icon(self.latency, self.loss, self._last_state)
+                        icon, new_state = status_text_icon(
+                            self.latency, self.loss, self._last_state
+                        )
                     case _:
                         raise ValueError(
                             f"Invalid display_mode setting: {self.settings.get('display_mode')}"
                         )
-                    
-                logger.debug(f"In refresh_status(): Last state: {self._last_state}, new state: {new_state}")
+
+                logger.debug(
+                    f"In refresh_status(): Last state: {self._last_state}, new state: {new_state}"
+                )
                 self._last_state = new_state
-                
+
                 if icon is not None:
-                    logger.debug(f"In refresh_status(): Updating icon for new state: {new_state}")
+                    logger.debug(
+                        f"In refresh_status(): Updating icon for new state: {new_state}"
+                    )
                     self._icon_nsimage = icon
                     self._nsapp.setStatusBarIcon()
 

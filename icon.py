@@ -79,8 +79,9 @@ def status_dot_icon(
 
     if state == last_state:
         return None, state
-    
+
     return (symbol_icon(symbol_name, "Network Status", color, True), state)
+
 
 def status_text_icon(
     latency: float | None,
@@ -195,7 +196,7 @@ def status_text_icon(
         )
 
     image.unlockFocus()
-    return image, new_state 
+    return image, new_state
 
 
 def symbol_icon(
