@@ -12,8 +12,7 @@ from rumps import App, clicked, MenuItem, timer
 from json import dump as json_dump, load as json_load
 from pinger import Pinger
 from icon import status_text_icon, status_dot_icon, symbol_icon
-from preferences import update_ping_targets
-from settings import SelectableMenu
+from settings import SelectableMenu, update_ping_targets
 
 
 class PingBarApp(App):
