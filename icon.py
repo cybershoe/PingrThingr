@@ -17,18 +17,20 @@ from AppKit import (
     NSImageSymbolConfiguration,
 )
 from Foundation import NSUserDefaults
+from typing import Tuple
 
 
 def status_dot_icon(
     latency: float | None,
     loss: float | None,
+    last_state: str | None = None,
     latency_warn_threshold: float = 80.0,
     latency_alert_threshold: float = 500.0,
     latency_critical_threshold: float = 1000.0,
     loss_warn_threshold: float = 0.00,
     loss_alert_threshold: float = 0.05,
     loss_critical_threshold: float = 0.25,
-) -> NSImage:
+) -> Tuple[NSImage | None, str]:
     """Create a status dot icon based on latency and loss thresholds.
 
     This function generates a small NSImage icon (20x20 pixels) that displays
@@ -39,6 +41,7 @@ def status_dot_icon(
     Args:
         latency (float | None): Network latency in milliseconds, or None if unavailable.
         loss (float | None): Packet loss as a decimal (0.0-1.0), or None if unavailable.
+        last_state (str | None): The previous state of the network status ("normal", "warn", "alert", "critical", or "unknown"). Used to determine if the icon needs to be updated. Defaults to None.
         latency_warn_threshold (float): Warning threshold for latency in ms. Defaults to 80.0.
         latency_alert_threshold (float): Alert threshold for latency in ms. Defaults to 500.0.
         latency_critical_threshold (float): Critical threshold for latency in ms. Defaults to 1000.0.
@@ -47,7 +50,9 @@ def status_dot_icon(
         loss_critical_threshold (float): Critical threshold for loss as decimal. Defaults to 0.25.
 
     Returns:
-        NSImage: A 20x20 pixel icon with a colored dot representing network status.
+        Tuple[NSImage | None, str]: A tuple with a 20x20 pixel icon with a colored dot representing network status, or None
+        if the new state equals the previous state, and a string describing the current state.
+
     """
 
     symbol_name = "circle.fill"
@@ -56,19 +61,26 @@ def status_dot_icon(
         case (la, lo) if la is None or lo is None:
             symbol_name = "circle.dotted"
             color = None
+            state = "unknown"
         case (la, lo) if (
             la > latency_critical_threshold or lo > loss_critical_threshold
         ):
             color = NSColor.redColor()
+            state = "critical"
         case (la, lo) if la > latency_alert_threshold or lo > loss_alert_threshold:
             color = NSColor.orangeColor()
+            state = "alert"
         case (la, lo) if la > latency_warn_threshold or lo > loss_warn_threshold:
             color = NSColor.yellowColor()
+            state = "warn"
         case _:
             color = None
+            state = "normal"
 
-    return symbol_icon(symbol_name, "Network Status", color, True)
-
+    if state == last_state:
+        return None, state
+    
+    return (symbol_icon(symbol_name, "Network Status", color, True), state)
 
 def status_text_icon(
     latency: float | None,

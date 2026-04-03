@@ -63,6 +63,7 @@ class PingBarApp(App):
         self.pause_menu.state = self.get_setting("paused", False)
         self.menu = [self.statistics_menu, self.pause_menu, self.display_menu]
         self._changed = False
+        self._last_state = None
 
         self.pinger = Pinger(
             targets=self.settings.get("targets", []),
@@ -195,7 +196,12 @@ class PingBarApp(App):
 
                 match display:
                     case "Dot":
-                        self._icon_nsimage = status_dot_icon(self.latency, self.loss)
+                        icon, new_state = status_dot_icon(self.latency, self.loss, self._last_state)
+                        logger.debug(f"In refresh_status(): Last state: {self._last_state}, new state: {new_state}")
+                        self._last_state = new_state
+                        if icon:
+                            logger.debug(f"In refresh_status(): Updating icon for new state: {new_state}")
+                            self._icon_nsimage = icon
                     case "Text":
                         self._icon_nsimage = status_text_icon(self.latency, self.loss)
                     case _:
