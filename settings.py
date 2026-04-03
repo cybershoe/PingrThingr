@@ -46,7 +46,9 @@ class SelectableMenu(MenuItem):
         """
         if options is None:
             options = []
-        super(SelectableMenu, self).__init__(title, **kwargs)
+
+        self._base_title = title
+        super(SelectableMenu, self).__init__(f"{title}: {selected}" if selected else title, **kwargs)
         self._menu_items = []
         cb_name = getattr(cb, "__name__", None)
         logger.debug(
@@ -75,6 +77,7 @@ class SelectableMenu(MenuItem):
         for item in self._menu_items:
             item.state = 0
         sender.state = 1
+        self.title = f"{self._base_title}: {sender.title}"
         if self._cb:
             self._cb(sender.title)
 
