@@ -47,6 +47,8 @@ class SelectableMenu(MenuItem):
         if options is None:
             options = []
 
+        if selected is not None and selected not in options:
+            raise ValueError("selected must be None or one of the provided options")
         self._base_title = title
         super(SelectableMenu, self).__init__(f"{title}: {selected}" if selected else title, **kwargs)
         self._menu_items = []
