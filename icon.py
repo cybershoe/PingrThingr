@@ -117,7 +117,7 @@ def status_text_icon(
     """
 
     latency_text = f"{latency:.1f}" if latency is not None else "---"
-    loss_text = f"{loss * 100:.1f} %" if loss is not None else "---"
+    loss_text = f"{loss * 100:.1f}" if loss is not None else "---"
     new_state = f"{latency_text}-{loss_text}"
     if new_state == last_state:
         return None, new_state
