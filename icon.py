@@ -206,7 +206,7 @@ def symbol_icon(
     symbol_image = NSImage.imageWithSystemSymbolName_accessibilityDescription_(
         symbol_name, accessibility_description
     )
-    
+
     if color is not None:
         # Create a hierarchical color configuration and apply it to the symbol
         config = NSImageSymbolConfiguration.configurationWithHierarchicalColor_(color)
