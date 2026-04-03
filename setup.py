@@ -9,7 +9,7 @@ from setuptools import setup
 
 APP = ["main.py"]
 NAME = "PingBar"
-VERSION = "0.1.2"
+VERSION = "0.2.0"
 DATA_FILES = []
 OPTIONS = {
     "argv_emulation": True,
