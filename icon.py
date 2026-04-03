@@ -85,13 +85,14 @@ def status_dot_icon(
 def status_text_icon(
     latency: float | None,
     loss: float | None,
+    last_state: str | None = None,
     latency_warn_threshold: float = 80.0,
     latency_alert_threshold: float = 500.0,
     latency_critical_threshold: float = 1000.0,
     loss_warn_threshold: float = 0.00,
     loss_alert_threshold: float = 0.05,
     loss_critical_threshold: float = 0.25,
-):
+) -> Tuple[NSImage | None, str]:
     """Create a status text icon showing latency and loss with color-coded thresholds.
 
     This function generates a two-line NSImage icon displaying network latency
@@ -102,6 +103,7 @@ def status_text_icon(
     Args:
         latency (float | None): Network latency in milliseconds, or None if unavailable.
         loss (float | None): Packet loss as a decimal (0.0-1.0), or None if unavailable.
+        last_state (str | None): The previous state of the network status (concatenation of latency and loss states). Used to determine if the icon needs to be updated. Defaults to None.
         latency_warn_threshold (float): Warning threshold for latency in ms. Defaults to 80.0.
         latency_alert_threshold (float): Alert threshold for latency in ms. Defaults to 500.0.
         latency_critical_threshold (float): Critical threshold for latency in ms. Defaults to 1000.0.
@@ -110,8 +112,13 @@ def status_text_icon(
         loss_critical_threshold (float): Critical threshold for loss as decimal. Defaults to 0.25.
 
     Returns:
-        NSImage: A 50x20 pixel icon with right-aligned text showing latency and loss values.
+        Tuple[NSImage | None, str]: A tuple with a 50x20 pixel icon with right-aligned text showing latency and loss values, or None
+        if the new state equals the previous state, and a string describing the current state.
     """
+
+    new_state = f'{latency:{".1f" if latency else ""}}-{loss:{".1f" if loss else ""}}'
+    if new_state == last_state:
+        return None, new_state
 
     size = NSSize(50, 20)
 
@@ -186,7 +193,7 @@ def status_text_icon(
         )
 
     image.unlockFocus()
-    return image
+    return image, new_state 
 
 
 def symbol_icon(
