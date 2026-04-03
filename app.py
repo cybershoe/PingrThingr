@@ -63,6 +63,7 @@ class PingBarApp(App):
         self.pause_menu.state = self.get_setting("paused", False)
         self.menu = [self.statistics_menu, self.pause_menu, self.display_menu]
         self._changed = False
+        self._last_state = None
 
         self.pinger = Pinger(
             targets=self.settings.get("targets", []),
@@ -181,6 +182,7 @@ class PingBarApp(App):
                 )
                 self.statistics_menu.title = "Paused"
                 self._icon_nsimage = symbol_icon("pause.circle", "Paused")
+                self._nsapp.setStatusBarIcon()
             else:
                 logger.debug(
                     f"In refresh_status(): Application is running, showing latency and loss"
@@ -195,15 +197,30 @@ class PingBarApp(App):
 
                 match display:
                     case "Dot":
-                        self._icon_nsimage = status_dot_icon(self.latency, self.loss)
+                        icon, new_state = status_dot_icon(
+                            self.latency, self.loss, self._last_state
+                        )
+
                     case "Text":
-                        self._icon_nsimage = status_text_icon(self.latency, self.loss)
+                        icon, new_state = status_text_icon(
+                            self.latency, self.loss, self._last_state
+                        )
                     case _:
                         raise ValueError(
                             f"Invalid display_mode setting: {self.settings.get('display_mode')}"
                         )
 
-            self._nsapp.setStatusBarIcon()
+                logger.debug(
+                    f"In refresh_status(): Last state: {self._last_state}, new state: {new_state}"
+                )
+                self._last_state = new_state
+
+                if icon is not None:
+                    logger.debug(
+                        f"In refresh_status(): Updating icon for new state: {new_state}"
+                    )
+                    self._icon_nsimage = icon
+                    self._nsapp.setStatusBarIcon()
 
     @clicked("Ping targets")
     def ping_targets(self, _):
