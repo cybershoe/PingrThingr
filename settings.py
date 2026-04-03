@@ -102,5 +102,16 @@ class SelectableMenu(MenuItem):
             option (str): The option to select. Must match one of the
                          options provided during initialization.
         """
+        selected_item = None
         for item in self._menu_items:
-            item.state = 1 if item.title == option else 0
+            if item.title == option:
+                selected_item = item
+                break
+
+        if selected_item is not None:
+            self._option_selected(selected_item)
+            return
+
+        for item in self._menu_items:
+            item.state = 0
+        self.title = self._base_title
