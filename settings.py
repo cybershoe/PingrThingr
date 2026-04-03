@@ -146,7 +146,9 @@ def update_ping_targets(targets: List[str]) -> List[str]:
         ).run()
 
         if response.clicked == 1:
-            logger.debug(f"In update_ping_targets(): User entered targets: {response.text}")
+            logger.debug(
+                f"In update_ping_targets(): User entered targets: {response.text}"
+            )
             new_targets = [t.strip() for t in response.text.split(",") if t.strip()]
             try:
                 for target in new_targets:
