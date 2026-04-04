@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 from rumps import App, clicked, MenuItem, timer
 from json import dump as json_dump, load as json_load
-from pinger import Pinger
-from icons import status_text_icon, status_dot_icon, symbol_icon
-from settings import SelectableMenu, update_ping_targets
+from .pinger import Pinger
+from .icons import status_text_icon, status_dot_icon, symbol_icon
+from .settings import SelectableMenu, update_ping_targets
 
 
 class PingrThingrApp(App):
